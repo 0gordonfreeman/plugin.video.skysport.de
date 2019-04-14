@@ -6,7 +6,8 @@ import re
 import sys
 import urlparse
 import urllib
-from HTMLParser import HTMLParser
+#from HTMLParser import HTMLParser
+from selectolax.parser import HTMLParser
 import xbmc, xbmcplugin, xbmcaddon, xbmcgui
 from bs4 import BeautifulSoup
 import requests
@@ -73,8 +74,24 @@ def build_url(query):
 
 def listHome():
     html = requests.get(HOST).text
-    soup = BeautifulSoup(html, 'html.parser')
+    body =  HTMLParser(html)
 
+    selector = "div.sdc-site-tile--has-link"
+
+    for node in body.css(selector):
+        for a in node.css('a.sdc-site-tile__headline-link'):
+            attributes = a.attributes
+            label = a.text(strip=True)
+            url = build_url({'action': 'playVoD', 'path': attributes['href']})
+        for img in node.css('img.sdc-site-tile__image'):
+            attributes = img.attributes
+            icon =  attributes['src']
+        print('larbel>' + label + '>url>' + url + '>icon>' + icon )
+        #addVideo(label, url, icon)
+
+
+    '''
+    soup = BeautifulSoup(html, 'html.parser')
     for item in soup('div', 'sdc-site-tile--has-link'):
         videoitem = item.find('span', {'class': 'sdc-site-tile__badge'})
         if videoitem is not None and videoitem.find('path') is not None:
@@ -83,6 +100,7 @@ def listHome():
             url = build_url({'action': 'playVoD', 'path': headline.a.get('href')})
             icon = item.img.get('src')
             addVideo(label, url, icon)
+    '''
 
     xbmcplugin.endOfDirectory(addon_handle, cacheToDisc=True)
 
@@ -213,6 +231,7 @@ def getHLSUrl(url, maxbandwith, maxresolution):
 
     return url
 
+listHome()
 
 if __name__ == '__main__':
     if 'action' in params:
